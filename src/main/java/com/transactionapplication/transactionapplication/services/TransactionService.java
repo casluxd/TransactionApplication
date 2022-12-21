@@ -9,12 +9,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
+import com.transactionapplication.transactionapplication.dtos.PayablesDTO;
 import com.transactionapplication.transactionapplication.dtos.ResponseDTO;
 import com.transactionapplication.transactionapplication.dtos.TransactionDTO;
+import com.transactionapplication.transactionapplication.entities.Payable;
 import com.transactionapplication.transactionapplication.entities.PaymentMethod;
 import com.transactionapplication.transactionapplication.entities.Transaction;
 import com.transactionapplication.transactionapplication.exceptions.StrategyNotFound;
 import com.transactionapplication.transactionapplication.exceptions.transaction.PaymentMethodInvalid;
+import com.transactionapplication.transactionapplication.repositories.PayableRepository;
 import com.transactionapplication.transactionapplication.repositories.PaymentMethodRepository;
 import com.transactionapplication.transactionapplication.repositories.TransactionRepository;
 import com.transactionapplication.transactionapplication.strategies.transaction.TransactionStrategy;
@@ -25,22 +28,26 @@ public class TransactionService {
 
   private final TransactionRepository transactionRepository;
   private final PaymentMethodRepository paymentMethodRepository;
+  private final PayableRepository payableRepository;
   private final List<TransactionStrategy> transactionStrategies;
 
   @Autowired
   public TransactionService(
       TransactionRepository transactionRepository,
       PaymentMethodRepository paymentMethodRepository,
-      List<TransactionStrategy> transactionsStrategies) {
+      List<TransactionStrategy> transactionsStrategies,
+      PayableRepository payableRepository) {
     this.paymentMethodRepository = paymentMethodRepository;
     this.transactionRepository = transactionRepository;
     this.transactionStrategies = transactionsStrategies;
+    this.payableRepository = payableRepository;
   }
 
   public ResponseDTO<Transaction> processTransaction(TransactionDTO transactionDTO) {
-    Optional<PaymentMethod> paymentMethod = paymentMethodRepository.findById(transactionDTO.getPaymentMethodId());
+    Long paymentMethodId = transactionDTO.getPaymentMethodId();
+    Optional<PaymentMethod> paymentMethod = paymentMethodRepository.findById(paymentMethodId);
 
-    if (!paymentMethod.isPresent() || paymentMethod.get() == null) {
+    if (!paymentMethod.isPresent()) {
       throw new PaymentMethodInvalid();
     }
 
@@ -61,13 +68,23 @@ public class TransactionService {
     }
 
     for (TransactionStrategy strategy : transactionStrategies) {
-      if (strategy.check(transaction)) {
+      if (strategy.check(transaction.getPaymentMethod().getName())) {
         return strategy.processTransaction(transaction);
-      } else {
-        throw new StrategyNotFound();
       }
     }
 
-    return null;
+    throw new StrategyNotFound();
+  }
+
+  public ResponseDTO<PayablesDTO> getAllPayables() {
+    List<Payable> waitingFunds = this.payableRepository.findByStatusPayableName("waiting_funds");
+    List<Payable> available = this.payableRepository.findByStatusPayableName("paid");
+
+    PayablesDTO payablesDTO = new PayablesDTO(available, waitingFunds);
+
+    return new ResponseDTO<>(
+        "Available balance and balance awaiting funds",
+        200,
+        payablesDTO);
   }
 }

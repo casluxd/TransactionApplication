@@ -5,7 +5,7 @@ import com.transactionapplication.transactionapplication.entities.Transaction;
 
 public interface TransactionStrategy {
 
-  public boolean check(Transaction transaction);
+  public boolean check(String paymentMethodName);
   
   public ResponseDTO<Transaction> processTransaction(Transaction transaction);
 

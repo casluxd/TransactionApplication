@@ -63,6 +63,4 @@ public class Payable {
     this.valueToReceive = value;
   }
 
-  
-
 }

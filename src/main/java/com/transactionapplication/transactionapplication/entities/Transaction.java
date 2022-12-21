@@ -106,12 +106,8 @@ public class Transaction {
 
   public void setCardValidateDate(String cardValidateDate) {
     String[] monthYear = cardValidateDate.split("/");
-    LocalDate data = LocalDate.parse(monthYear[1] + "/" + monthYear[0] +"/01",
+    this.cardValidateDate = LocalDate.parse(monthYear[1] + "/" + monthYear[0] + "/01",
         DateTimeFormatter.ofPattern("yyyy/MM/dd"));
-
-    String dataFormatada = data.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
-
-    this.cardValidateDate = LocalDate.parse(dataFormatada, DateTimeFormatter.ofPattern("dd/MM/yyyy"));
   }
 
   public String getCardVerificationCode() {

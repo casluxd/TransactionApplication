@@ -20,17 +20,13 @@ public class DebitTransactionStrategy extends AbstractTransactionStrategy {
     super(statusPayableRepository, payableRepository);
   }
 
-  public boolean check(Transaction transaction) {
-    System.out.println(transaction.getPaymentMethod().getName());
-    if(transaction.getPaymentMethod().getName().equals("debit")) {
-      return true;
-    }
-    return false;
+  public boolean check(String paymentMethodName) {
+    return "debit".equalsIgnoreCase(paymentMethodName);
   }
 
   @Override
   public ResponseDTO<Transaction> processTransaction(Transaction transaction) {
-    super.createPayable(transaction, LocalDate.now());
+    createPayable(transaction, LocalDate.now());
 
     return new ResponseDTO<Transaction>(
         "The transaction took place successfully.",
